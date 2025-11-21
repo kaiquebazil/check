@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist Numerada (1-214)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #ecf0f1;
+            margin-bottom: 30px;
+        }
+        
+        .progress-container {
+            background-color: #34495e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #7f8c8d;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .checklist {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        
+        .check-item {
+            display: flex;
+            align-items: center;
+            background-color: #34495e;
+            padding: 8px 12px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        
+        .check-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .check-item input {
+            margin-right: 8px;
+            cursor: pointer;
+            accent-color: #3498db; /* Estiliza o checkbox */
+            width: 20px; /* Tamanho do checkbox */
+            height: 20px; /* Tamanho do checkbox */
+        }
+        
+        .check-item label {
+            cursor: pointer;
+        }
+        
+        .check-item.checked {
+            background-color: #1abc9c;
+            color: #fff;
+            text-decoration: line-through;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .notes {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #34495e;
+            border-left: 4px solid #f39c12;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        @media (max-width: 600px) {
+            .checklist {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Checklist Videos</h1>
+    
+    <div class="progress-container">
+        <div class="stats">
+            <div>Total: <span id="total">214</span></div>
+            <div>Marcados: <span id="checked">0</span></div>
+            <div>Faltam: <span id="remaining">214</span></div>
+            <div>Progresso: <span id="percentage">0%</span></div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="check-all">Marcar Todos</button>
+        <button id="uncheck-all">Desmarcar Todos</button>
+        <button id="save">Salvar</button>
+    </div>
+    
+    <div class="checklist" id="checklist">
+        <!-- Itens serão gerados por JavaScript -->
+    </div>
+    
+    <div class="notes">
+        <h3>Anotações</h3>
+        <textarea id="notes-text" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Adicione suas anotações aqui..."></textarea>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const totalItems = 675;
+            const checklist = document.getElementById('checklist');
+            const checkedCountElement = document.getElementById('checked');
+            const remainingCountElement = document.getElementById('remaining');
+            const percentageElement = document.getElementById('percentage');
+            const progressBar = document.getElementById('progress');
+            const checkAllButton = document.getElementById('check-all');
+            const uncheckAllButton = document.getElementById('uncheck-all');
+            const saveButton = document.getElementById('save');
+            const notesTextarea = document.getElementById('notes-text');
+            
+            // Carrega os dados salvos
+            let checkedItems = JSON.parse(localStorage.getItem('checkedItems')) || [];
+            let notes = localStorage.getItem('checklistNotes') || '';
+            notesTextarea.value = notes;
+            
+            // Cria os itens da checklist
+            for (let i = 1; i <= totalItems; i++) {
+                const item = document.createElement('div');
+                item.className = 'check-item';
+                if (checkedItems.includes(i)) {
+                    item.classList.add('checked');
+                }
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'item-' + i;
+                checkbox.checked = checkedItems.includes(i);
+                checkbox.addEventListener('change', updateStats);
+                
+                const label = document.createElement('label');
+                label.htmlFor = 'item-' + i;
+                label.textContent = i;
+                
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                checklist.appendChild(item);
+            }
+            
+            // Atualiza as estatísticas
+            function updateStats() {
+                const checkboxes = document.querySelectorAll('#checklist input[type="checkbox"]');
+                checkedItems = [];
+                
+                checkboxes.forEach(checkbox => {
+                    const itemNumber = parseInt(checkbox.id.split('-')[1]);
+                    const itemElement = checkbox.parentElement;
+                    
+                    if (checkbox.checked) {
+                        checkedItems.push(itemNumber);
+                        itemElement.classList.add('checked');
+                    } else {
+                        itemElement.classList.remove('checked');
+                    }
+                });
+                
+                const checkedCount = checkedItems.length;
+                const remainingCount = totalItems - checkedCount;
+                const percentage = Math.round((checkedCount / totalItems) * 100);
+                
+                checkedCountElement.textContent = checkedCount;
+                remainingCountElement.textContent = remainingCount;
+                percentageElement.textContent = percentage + '%';
+                progressBar.style.width = percentage + '%';
+                
+                // Atualiza a cor da barra de progresso conforme o progresso
+                if (percentage < 30) {
+                    progressBar.style.backgroundColor = '#e74c3c';
+                } else if (percentage < 70) {
+                    progressBar.style.backgroundColor = '#f39c12';
+                } else {
+                    progressBar.style.backgroundColor = '#2ecc71';
+                }
+                
+                saveProgress();
+            }
+            
+            // Salva o progresso no localStorage
+            function saveProgress() {
+                localStorage.setItem('checkedItems', JSON.stringify(checkedItems));
+                localStorage.setItem('checklistNotes', notesTextarea.value);
+            }
+            
+            // Event listeners para os botões
+            checkAllButton.addEventListener('click', function() {
+                document.querySelectorAll('#checklist input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+                updateStats();
+            });
+            
+            uncheckAllButton.addEventListener('click', function() {
+                document.querySelectorAll('#checklist input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateStats();
+            });
+            
+            saveButton.addEventListener('click', function() {
+                saveProgress();
+                alert('Progresso salvo com sucesso!');
+            });
+            
+            notesTextarea.addEventListener('input', function() {
+                notes = notesTextarea.value;
+                saveProgress();
+            });
+            
+            // Atualiza as estatísticas inicialmente
+            updateStats();
+        });
+
+        
+    </script>
+</body>
+</html>
